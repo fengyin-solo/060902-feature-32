@@ -178,6 +178,19 @@
         </div>
         
         <div class="modal-body">
+          <div class="privacy-warning-box">
+            <div class="warning-icon">⚠️</div>
+            <div class="warning-content">
+              <h4>隐私风险提示</h4>
+              <p>挂出后，这条短信将对所有用户可见，请确认：</p>
+              <ul>
+                <li>短信内容不涉及他人隐私信息</li>
+                <li>您已获得对方同意分享此内容</li>
+                <li>内容不包含敏感个人信息（地址、身份证号等）</li>
+              </ul>
+            </div>
+          </div>
+          
           <p class="modal-desc">把这条短信匿名挂到广场，让别人猜猜上下文是什么。</p>
           
           <div class="preview-exhibit">
@@ -199,9 +212,23 @@
             </label>
           </div>
           
+          <div class="privacy-confirm">
+            <label class="confirm-label">
+              <input type="checkbox" v-model="hangUpOptions.privacyConfirmed" />
+              我已阅读并确认以上内容，自愿分享此短信
+            </label>
+          </div>
+          
           <div class="modal-actions">
             <button class="btn btn-secondary" @click="showHangUpModal = false">取消</button>
-            <button class="btn btn-primary" @click="confirmHangUp">确认挂出</button>
+            <button 
+              class="btn btn-primary" 
+              @click="confirmHangUp"
+              :disabled="!hangUpOptions.privacyConfirmed"
+              :class="{ disabled: !hangUpOptions.privacyConfirmed }"
+            >
+              确认挂出
+            </button>
           </div>
         </div>
       </div>
@@ -223,8 +250,9 @@ const showHangUpModal = ref(false);
 const selectedMessageToHang = ref(null);
 const selectedLetterToHang = ref(null);
 const hangUpOptions = ref({
- hideContext: true,
- anonymous: true
+  hideContext: true,
+  anonymous: true,
+  privacyConfirmed: false
 });
 const messageRefs = ref({});
 const displayModes = [
@@ -318,14 +346,19 @@ function viewConversation(letter) {
  selectedLetter.value = letter;
 }
 function hangUp(letter, msg) {
- selectedMessageToHang.value = msg;
- selectedLetterToHang.value = letter;
- showHangUpModal.value = true;
+  selectedMessageToHang.value = msg;
+  selectedLetterToHang.value = letter;
+  hangUpOptions.value.privacyConfirmed = false;
+  showHangUpModal.value = true;
 }
 function confirmHangUp() {
- if (!selectedMessageToHang.value || !selectedLetterToHang.value)
- return;
- const post = {
+  if (!selectedMessageToHang.value || !selectedLetterToHang.value)
+    return;
+  if (!hangUpOptions.value.privacyConfirmed) {
+    alert('请先阅读并确认隐私风险提示');
+    return;
+  }
+  const post = {
  id: Math.random().toString(36).substr(2, 9),
  message: selectedMessageToHang.value.body,
  messageId: selectedMessageToHang.value.id,
@@ -753,5 +786,82 @@ onMounted(() => {
   gap: 1rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border);
+}
+
+.privacy-warning-box {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.warning-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.warning-content h4 {
+  color: #856404;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.warning-content p {
+  color: #856404;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.warning-content ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.warning-content li {
+  color: #856404;
+  font-size: 0.85rem;
+  padding: 0.2rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.warning-content li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #856404;
+}
+
+.privacy-confirm {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-light);
+  border-radius: 8px;
+}
+
+.confirm-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+}
+
+.confirm-label input[type="checkbox"] {
+  margin-top: 2px;
+}
+
+.btn-primary.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary.disabled:hover {
+  transform: none;
 }
 </style>

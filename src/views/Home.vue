@@ -65,6 +65,31 @@
       </div>
     </section>
 
+    <div v-if="showPrivacyConfirm" class="privacy-modal" @click.self="cancelUpload">
+      <div class="privacy-modal-content card">
+        <div class="privacy-icon">🔒</div>
+        <h3>隐私风险提示</h3>
+        <div class="privacy-warnings">
+          <p>您即将上传的短信备份中可能包含以下敏感信息：</p>
+          <ul>
+            <li>📱 手机号码和联系人信息</li>
+            <li>💬 私人对话内容和情感信息</li>
+            <li>📅 时间线和行为轨迹</li>
+            <li>🏠 可能涉及的住址、工作单位等信息</li>
+          </ul>
+          <div class="privacy-note">
+            <strong>⚠️ 请注意：</strong>
+            <p>所有短信分析均在您的本地浏览器中完成，不会上传到任何服务器。</p>
+            <p>但您选择"挂出去"分享到广场的内容将对其他人可见，请谨慎选择。</p>
+          </div>
+        </div>
+        <div class="privacy-actions">
+          <button class="btn btn-secondary" @click="cancelUpload">取消</button>
+          <button class="btn btn-primary" @click="confirmUpload">我已知晓，继续上传</button>
+        </div>
+      </div>
+    </div>
+
     <section v-if="store.loveLetters.length > 0 && !store.processing" class="results">
       <div class="results-header">
         <h3>✨ 为您找到 {{ store.loveLetters.length }} 段情书级对话</h3>
@@ -132,6 +157,8 @@ import { findLoveLetters } from '@/detectors'
 const router = useRouter()
 const fileInput = ref(null)
 const isDragging = ref(false)
+const showPrivacyConfirm = ref(false)
+const pendingFile = ref(null)
 
 function triggerFileInput() {
   fileInput.value.click()
@@ -140,7 +167,8 @@ function triggerFileInput() {
 async function handleFileSelect(e) {
   const file = e.target.files[0]
   if (file) {
-    await processFile(file)
+    pendingFile.value = file
+    showPrivacyConfirm.value = true
   }
 }
 
@@ -148,7 +176,24 @@ async function handleDrop(e) {
   isDragging.value = false
   const file = e.dataTransfer.files[0]
   if (file) {
-    await processFile(file)
+    pendingFile.value = file
+    showPrivacyConfirm.value = true
+  }
+}
+
+function cancelUpload() {
+  showPrivacyConfirm.value = false
+  pendingFile.value = null
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
+async function confirmUpload() {
+  showPrivacyConfirm.value = false
+  if (pendingFile.value) {
+    await processFile(pendingFile.value)
+    pendingFile.value = null
   }
 }
 
@@ -447,5 +492,90 @@ function getTagClass(tag) {
   justify-content: space-between;
   color: var(--text-light);
   font-size: 0.9rem;
+}
+
+.privacy-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.privacy-modal-content {
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+}
+
+.privacy-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.privacy-modal-content h3 {
+  color: var(--love-red);
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.privacy-warnings {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.privacy-warnings p {
+  color: var(--text-dark);
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.privacy-warnings ul {
+  list-style: none;
+  margin-bottom: 1rem;
+}
+
+.privacy-warnings li {
+  padding: 0.4rem 0;
+  color: var(--text-light);
+}
+
+.privacy-note {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.privacy-note strong {
+  color: #856404;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-note p {
+  color: #856404;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-weight: normal;
+}
+
+.privacy-note p:last-child {
+  margin-bottom: 0;
+}
+
+.privacy-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 </style>
